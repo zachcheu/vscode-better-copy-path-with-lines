@@ -124,9 +124,15 @@ npm run compile
   "copyPathWithLineNumber.path.separator": "slash",      // "/" 或 "\" 或 "system"
   "copyPathWithLineNumber.range.connector": "dash",      // "-" 或 "~"
   "copyPathWithLineNumber.selection.separator": "comma", // "," 或 ";" 或 " "
+  "copyPathWithLineNumber.relative.exclude.prefixes": [  // 可选：移除匹配的相对路径前缀
+    "compare/*/*"
+  ],
   "copyPathWithLineNumber.show.message": true            // 显示通知
 }
 ```
+
+示例：相对路径为 `compare/wmvsyynw->xpwonuux/wmvsyynw/src/code.uber.internal/app.ts`，且配置包含
+`compare/*/*` 时，复制结果会变成 `src/code.uber.internal/app.ts`。
 
 **示例：**
 ```

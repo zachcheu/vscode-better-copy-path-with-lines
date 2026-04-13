@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">
-  <img src="assets/logo.svg" width="32" height="32" alt="Logo" align="top">
+  <img src="images/icon.png" width="32" height="32" alt="Logo" align="top">
   Better Copy Path with Lines
 </h1>
 
@@ -71,9 +71,15 @@ src/api/client.ts:5, 15, 25         ← Multiple selections
   "copyPathWithLineNumber.path.separator": "slash",      // "/" | "\" | "system"
   "copyPathWithLineNumber.range.connector": "dash",      // "-" | "~"
   "copyPathWithLineNumber.selection.separator": "comma", // "," | ";" | " "
+  "copyPathWithLineNumber.relative.exclude.prefixes": [  // Optional: strip matching relative prefixes
+    "compare/*/*"
+  ],
   "copyPathWithLineNumber.show.message": true            // Show notification
 }
 ```
+
+Example: if the relative path is `compare/wmvsyynw->xpwonuux/wmvsyynw/src/code.uber.internal/app.ts`
+and config contains `compare/*/*`, the copied relative path becomes `src/code.uber.internal/app.ts`.
 
 ## 📥 Installation
 

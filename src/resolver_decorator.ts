@@ -58,6 +58,61 @@ class RelativeUriResolver implements UriResolverDecorator {
         this.pathSeparatorStrategy = symbolStrategyFactory.GetPathSeparatorStrategy();
         this.uriResolver = UriResolver;
     }
+    private normalizePath(pathStr: string): string {
+        return pathStr.replace(/\\/g, '/');
+    }
+    private splitPathSegments(pathStr: string): string[] {
+        return this.normalizePath(pathStr)
+            .split('/')
+            .filter(segment => segment.length > 0);
+    }
+    private applyRelativeExcludePrefixes(pathStr: string): string {
+        const config = workspace.getConfiguration('copyPathWithLineNumber');
+        const patternConfig = config.get<string[]>('relative.exclude.prefixes', []);
+
+        if (!Array.isArray(patternConfig) || patternConfig.length === 0) {
+            return pathStr;
+        }
+
+        const pathSegments = this.splitPathSegments(pathStr);
+        let bestMatchLength = 0;
+
+        for (const rawPattern of patternConfig) {
+            if (typeof rawPattern !== 'string' || rawPattern.trim().length === 0) {
+                continue;
+            }
+
+            const patternSegments = this.splitPathSegments(rawPattern);
+            if (patternSegments.length === 0 || patternSegments.length > pathSegments.length) {
+                continue;
+            }
+
+            let isMatch = true;
+            for (let i = 0; i < patternSegments.length; i++) {
+                const patternSegment = patternSegments[i];
+                if (patternSegment !== '*' && patternSegment !== pathSegments[i]) {
+                    isMatch = false;
+                    break;
+                }
+            }
+
+            if (isMatch && patternSegments.length > bestMatchLength) {
+                bestMatchLength = patternSegments.length;
+            }
+        }
+
+        if (bestMatchLength === 0) {
+            return pathStr;
+        }
+
+        const stripped = pathSegments.slice(bestMatchLength).join('/');
+        return stripped.length > 0 ? stripped : pathStr;
+    }
+    private formatRelativePath(pathStr: string): string {
+        const normalizedPath = this.normalizePath(pathStr);
+        const strippedPath = this.applyRelativeExcludePrefixes(normalizedPath);
+        return strippedPath.replace(/\//g, this.pathSeparatorStrategy.GetSymbol());
+    }
     GetPath(uri: Uri | any): string {
         var p = this.uriResolver.GetPath(uri);
 
@@ -76,14 +131,14 @@ class RelativeUriResolver implements UriResolverDecorator {
             pathStr = p;
         }
 
-        return pathStr.replace(/\//g, this.pathSeparatorStrategy.GetSymbol());
+        return this.formatRelativePath(pathStr);
     }
     async GetPaths(uri: Uri | any): Promise<string[]> {
         var paths = await this.uriResolver.GetPaths(uri);
         return paths.map(p => {
             const relativePath = workspace.asRelativePath(p);
-            const pathStr = typeof relativePath === 'string' ? relativePath : p;
-            return pathStr.replace(/\//g, this.pathSeparatorStrategy.GetSymbol());
+            const pathStr = typeof relativePath === 'string' && relativePath.length > 0 ? relativePath : p;
+            return this.formatRelativePath(pathStr);
         });
     }
 }
